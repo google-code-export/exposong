@@ -62,6 +62,7 @@ class SplashScreen(gtk.Window, object):
     def incr_total(self, tot):
         "Add to the denominator."
         self._den += tot
-        self._progress.set_fraction(self._num / self._den)
+        if self._num != 0:
+            self._progress.set_fraction(self._num / self._den)
 
 splash = None

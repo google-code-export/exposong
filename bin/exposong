@@ -24,7 +24,7 @@ except NameError:
     pass
 else:
     # running from bin/exposong
-    if exists(join(dirname(__file__), pardir, 'lib')): 
+    if exists(join(dirname(__file__), pardir, 'lib')):
         sys.path.insert(0, join(dirname(__file__), pardir, 'lib'))
 
 import exposong
