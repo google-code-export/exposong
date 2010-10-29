@@ -23,8 +23,9 @@ import tarfile
 import mimetypes
 
 import exposong.application
-import exposong.plugins
-from exposong import DATA_PATH, schedlist
+import exposong.schedlist
+from exposong import DATA_PATH
+from exposong.plugins import Plugin
 from exposong.glob import *
 
 """
@@ -43,7 +44,7 @@ _FILTER = gtk.FileFilter()
 _FILTER.set_name("ExpoSong Archive")
 _FILTER.add_pattern("*.expo")
 
-class ExportImport(exposong.plugins.Plugin, exposong._hook.Menu):
+class ExportImport(Plugin, exposong._hook.Menu):
     '''
     Export or Import from file.
     
@@ -58,7 +59,7 @@ class ExportImport(exposong.plugins.Plugin, exposong._hook.Menu):
     @classmethod
     def export_sched(cls, *args):
         'Export a single schedule with belonging presentations to file.'
-        sched = schedlist.schedlist.get_active_item()
+        sched = exposong.schedlist.schedlist.get_active_item()
         if not sched:
             return False
         dlg = gtk.FileChooserDialog(_("Export Current Schedule"),
@@ -86,7 +87,7 @@ class ExportImport(exposong.plugins.Plugin, exposong._hook.Menu):
     def _get_sched_list(cls, *args):
         'Returns a list with a single schedule and belonging presentations'
         exposong.application.main._save_schedules()
-        sched = schedlist.schedlist.get_active_item()
+        sched = exposong.schedlist.schedlist.get_active_item()
         sched_list = []
         sched_list.append((os.path.join(DATA_PATH, "sched", sched.filename),
                            os.path.join("sched",
@@ -141,8 +142,8 @@ class ExportImport(exposong.plugins.Plugin, exposong._hook.Menu):
                     lib_list.append((slide.image, os.path.join("image",
                                      os.path.split(slide.image)[1])))
             itr = library.iter_next(itr)
-        model = schedlist.schedlist.get_model()
-        itr = model.iter_children(schedlist.schedlist.custom_schedules)
+        model = exposong.schedlist.schedlist.get_model()
+        itr = model.iter_children(exposong.schedlist.schedlist.custom_schedules)
         while itr:
             fn = model.get_value(itr, 0).filename
             lib_list.append((fn, os.path.join("sched", os.path.split(fn)[1])))
