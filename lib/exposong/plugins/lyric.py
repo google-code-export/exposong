@@ -234,10 +234,7 @@ class Presentation (text.Presentation, Plugin, exposong._hook.Menu,
         else:
             if config.get("general", "title_slide") == "True":
                 #Skip title slide in default order
-                order = _abstract.Presentation.get_order(self)
-                order.remove(0)
-                order.append(order[-1]+1)
-                return order
+                return map(lambda x: x+1, _abstract.Presentation.get_order(self))
             return _abstract.Presentation.get_order(self)
 
     def get_slide_from_order(self, order_value):
