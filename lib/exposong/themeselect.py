@@ -106,10 +106,9 @@ class ThemeSelect(gtk.ComboBox, exposong._hook.Menu, object):
     
     def _get_theme_title(self, column, cell, model, titer):
         "Get the theme name from the filename."
-        path = model.get_value(titer, 0)
-        if path:
-            t = os.path.basename(path).rstrip('.xml')
-            cell.set_property('text', t.title())
+        thm = model.get_value(titer, 1)
+        if thm:
+            cell.set_property('text', thm.get_title())
     
     def _on_change(self, combo):
         "A new image was selected."

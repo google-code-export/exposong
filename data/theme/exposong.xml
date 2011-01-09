@@ -1,5 +1,11 @@
-<?xml version="1.0" ?>
+<?xml version='1.0' encoding='UTF-8'?>
 <theme>
+    <meta>
+        <title>ExpoSong</title>
+        <author>Brad Landis</author>
+        <themeurl>http://exposong.org</themeurl>
+        <copyright>ExpoSong Logo: &#169; 2010 The ExpoSong Team</copyright>
+    </meta>
     <background>
         <gradiant angle='0' x1='0.0' x2='1.0' y1='0.0' y2='0.845'>
             <point color='#777' stop='0.0' />

@@ -62,15 +62,21 @@ class Theme(object):
     """
     def __init__(self, filename=None):
         "Create a theme."
-        self.filename = filename
+        self.filename = None
+        self.meta = {}
         self.backgrounds = []
         self.body = Section(type_='body', font="Sans 56",
                             pos=[0.0, 0.0, 1.0, 0.8])
         self.footer = Section(type_='footer', font="Sans 12",
                               pos=[0.0, 0.8, 1.0, 1.0])
         if filename:
+            self.filename = os.path.split(filename)[1]
+            
             tree = etree.parse(filename)
             self.load(tree)
+        #For Testing
+        if None:
+            self.save()
     
     def get_footer_pos(self):
         "Return the position where the footer begins."
@@ -79,10 +85,18 @@ class Theme(object):
         return 0.85
     
     def get_footer(self):
+        "Return the theme footer."
         return self.footer
 
     def get_body(self):
+        "Return the theme body."
         return self.body
+    
+    def get_title(self):
+        "Return the name of the theme."
+        if 'title' in self.meta:
+            return self.meta['title']
+        return os.path.basename(filename).rstrip('.xml').title()
     
     def load(self, tree):
         "Load the theme from an XML file."
@@ -90,6 +104,10 @@ class Theme(object):
             root = tree.getroot()
         else:
             root = tree
+        meta = root.find("meta")
+        if etree.iselement(meta):
+            for el in meta:
+                self.meta[el.tag] = el.text
         backgrounds = root.find(u'background')
         for bg in backgrounds.getchildren():
             bgobj = _Background.create_element(bg)
@@ -104,7 +122,30 @@ class Theme(object):
     
     def save(self):
         "Save theme to disk."
-        pass
+        root = self.to_xml()
+        tree = etree.ElementTree(root)
+        # TODO This is saved in the current local directory.
+        tree.write(self.filename, encoding='UTF-8')
+    
+    def to_xml(self):
+        "Output the theme to a standardized format."
+        root = etree.Element(u'theme')
+        meta = etree.Element(u'meta')
+        for tag, text in self.meta.iteritems():
+            el = etree.Element(tag)
+            el.text = text
+            meta.append(el)
+        root.append(meta)
+        backgrounds = etree.Element(u'background')
+        for e in self.backgrounds:
+            backgrounds.append(e.to_xml())
+        root.append(backgrounds)
+        
+        sections = etree.Element(u'sections')
+        sections.append(self.body.to_xml())
+        sections.append(self.footer.to_xml())
+        root.append(sections)
+        return root
     
     def render(self, ccontext, bounds, slide):
         "Render the theme to the screen."
@@ -164,6 +205,13 @@ class _Renderable(object):
         self.pos = [float(el.get('x1', 0.0)), float(el.get('y1', 0.0)),
                     float(el.get('x2', 1.0)), float(el.get('y2', 1.0))]
     
+    def to_xml(self, el):
+        "Output to an XML Element."
+        el.attrib['x1'] = str(self.pos[0])
+        el.attrib['y1'] = str(self.pos[1])
+        el.attrib['x2'] = str(self.pos[2])
+        el.attrib['y2'] = str(self.pos[3])
+    
     def draw(self, ccontext, bounds):
         "Render the background to the context."
         if len(bounds) == 2:
@@ -200,7 +248,7 @@ class _Element(object):
     
     @staticmethod
     def get_tag():
-        ""
+        "Return the XML tag name."
         return NotImplemented
 
 
@@ -226,6 +274,14 @@ class ColorBackground(_Background, _Renderable):
         self.color = el.get('color', "#fff")
         self.alpha = float(el.get('alpha', 1.0))
     
+    def to_xml(self):
+        "Output to an XML Element."
+        el = etree.Element(self.get_tag())
+        _Renderable.to_xml(self, el)
+        el.attrib['color'] = self.color
+        el.attrib['alpha'] = str(self.alpha)
+        return el
+    
     def draw(self, ccontext, bounds):
         "Render the background to the context."
         _Renderable.draw(self, ccontext, bounds)
@@ -240,7 +296,7 @@ class ColorBackground(_Background, _Renderable):
     
     @staticmethod
     def get_tag():
-        ""
+        "Return the XML tag name."
         return "solid"
 
 
@@ -261,11 +317,18 @@ class GradiantBackground(_Background, _Renderable):
         
         self.stops = []
         for pt in el.getchildren():
-            assert pt.tag == 'point'
-            stop = GradiantStop(float(pt.get("stop", 0.0)),
-                                pt.get("color", "#fff"),
-                                float(pt.get("alpha", 1.0)))
+            stop = GradiantStop()
+            stop.parse_xml(pt)
             self.stops.append(stop)
+    
+    def to_xml(self):
+        "Output to an XML Element."
+        el = etree.Element(self.get_tag())
+        _Renderable.to_xml(self, el)
+        el.attrib['angle'] = str(self.angle)
+        for s in self.stops:
+            el.append(s.to_xml())
+        return el
     
     def draw(self, ccontext, bounds):
         "Render the background to the context."
@@ -304,7 +367,7 @@ class GradiantBackground(_Background, _Renderable):
     
     @staticmethod
     def get_tag():
-        ""
+        "Return the XML tag name."
         return "gradiant"
 
 
@@ -317,6 +380,23 @@ class GradiantStop(_Element):
         self.location = location
         self.color = color
         self.alpha = alpha
+    
+    def parse_xml(self, el):
+        "Define variables based on XML values."
+        assert el.tag == 'point'
+        if 'stop' in el.attrib:
+            self.location = float(el.attrib['stop'])
+        if 'color' in el.attrib:
+            self.color = el.attrib['color']
+        if 'alpha' in el.attrib:
+            self.alpha = float(el.attrib['alpha'])
+    
+    def to_xml(self):
+        el = etree.Element("stop")
+        el.attrib['stop'] = str(self.location)
+        el.attrib['color'] = self.color
+        el.attrib['alpha'] = str(self.alpha)
+        return el
 
 
 class ImageBackground(_Background, _Renderable):
@@ -342,8 +422,19 @@ class ImageBackground(_Background, _Renderable):
         else:
             self.aspect = ASPECT_FILL
     
+    def to_xml(self):
+        "Output to an XML Element."
+        el = etree.Element(self.get_tag())
+        _Renderable.to_xml(self, el)
+        el.attrib['src'] = self.src
+        if self.aspect == ASPECT_FILL:
+            el.attrib['aspect'] = 'fill'
+        elif self.aspect == ASPECT_FIT:
+            el.attrib['aspect'] = 'fit'
+        return el
+    
     def get_filename(self):
-        return os.path.join(DATA_PATH,'theme', 'res', self.src)
+        return os.path.join(DATA_PATH, 'theme', 'res', self.src)
     
     def load(self, size):
         ""
@@ -377,8 +468,9 @@ class ImageBackground(_Background, _Renderable):
     
     @staticmethod
     def get_tag():
-        ""
+        "Return the XML tag name."
         return "img"
+
 
 class Section(_Element):
     """
@@ -390,11 +482,12 @@ class Section(_Element):
                  shadow_color="#000", shadow_opacity=0.4, shadow_offset=None,
                  pos=None):
         _Element.__init__(self)
+        assert type_ in (None, 'body', 'footer')
+        self.type_ = type_
         if isinstance(pos, list) and len(pos) == 4:
             self.pos = pos
         else:
             self.pos = [0.0, 1.0, 0.0, 1.0]
-        self.type_ = type_
         self.font = font
         self.color = color
         self.shadow_color = shadow_color
@@ -419,6 +512,25 @@ class Section(_Element):
             self.shadow_opacity = float(el2.get('opacity', 0.4))
             self.shadow_offset = [float(el2.get('offsetx', 0.1)),
                                   float(el2.get('offsety', 0.1))]
+    
+    def to_xml(self):
+        "Output to an XML Element."
+        el = etree.Element(self.type_)
+        el.attrib['x1'] = str(self.pos[0])
+        el.attrib['y1'] = str(self.pos[1])
+        el.attrib['x2'] = str(self.pos[2])
+        el.attrib['y2'] = str(self.pos[3])
+        el.attrib['font'] = self.font
+        el2 = etree.Element('text')
+        el2.attrib['color'] = self.color
+        el.append(el2)
+        el2 = etree.Element('shadow')
+        el2.attrib['color'] = self.shadow_color
+        el2.attrib['opacity'] = str(self.shadow_opacity)
+        el2.attrib['offsetx'] = str(self.shadow_offset[0])
+        el2.attrib['offsety'] = str(self.shadow_offset[1])
+        el.append(el2)
+        return el
 
 
 class _RenderableSection(_Renderable):
@@ -456,6 +568,7 @@ class _RenderableSection(_Renderable):
         assert self.rpos[0] < self.rpos[2]
         assert self.rpos[1] < self.rpos[3]
 
+# Text() and Image() classes are to be called by slides 
 
 class Text(_RenderableSection):
     """
