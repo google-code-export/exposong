@@ -56,10 +56,8 @@ class Presentation:
         def __init__(self, pres, value):
             self.pres = pres
             if etree.iselement(value):
-                self.text = get_node_text(value, True)
                 self.title = value.get("title")
             elif isinstance(value, str):
-                self.text = value
                 self.title = ''
             self._set_id(value)
         
@@ -74,9 +72,9 @@ class Presentation:
         def get_markup(self, editing=False):
             'Get the text for the slide selection.'
             if self.title:
-                return "<b>" + self.get_title(editing) + "</b>\n" + self.text
+                return "<b>" + self.get_title(editing) + "</b>\n" + self.get_text()
             else:
-                return self.text
+                return self.get_text()
         
         def get_slide(self):
             '''A list of full screen renderable theme items.
@@ -96,11 +94,7 @@ class Presentation:
         
         def to_node(self, node):
             'Populate the node element'
-            if self.title:
-                node.attrib["title"] = self.title
-            if self.id:
-                node.attrib["id"] = self.id
-            node.text = self.text
+            raise NotImplementedError
         
         def set_attributes(self, layout):
             'Set attributes on a pango.Layout object.'
