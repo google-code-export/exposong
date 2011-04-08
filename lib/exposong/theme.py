@@ -607,8 +607,8 @@ class Section(_Element):
             screens will have larger font sizes for consistency among
             setups.
     """
-    def __init__(self, type_=None, font="Sans 24", color="#fff", spacing=1.0,
-                 outline_color=None, outline_size=1,
+    def __init__(self, type_=None, font="Sans 24", color="#fff", align=CENTER,
+                 valign=MIDDLE, spacing=1.0, outline_color=None, outline_size=1,
                  shadow_color=None, shadow_opacity=0.4, shadow_offset=None,
                  pos=None, expand=None):
         _Element.__init__(self)
@@ -626,6 +626,8 @@ class Section(_Element):
         self.font = font
         self.color = color
         self.spacing = spacing
+        self.align = align
+        self.valign = valign
         
         self.outline_color = outline_color
         self.outline_size = outline_size
@@ -645,6 +647,13 @@ class Section(_Element):
         self.expand = el.get('expand', '').split(',')
         self.font = el.get('font', 'Sans 24')
         self.spacing = float(el.get('spacing', '1.0'))
+        align = get_align_const(el.get('align'))
+        if align != -1:
+            self.align = align
+        valign = get_valign_const(el.get('valign'))
+        if valign != -1:
+            self.valign = valign
+        
         el2 = el.find('text')
         if el2 != None:
             self.color = el2.get('color', '#fff')
@@ -664,6 +673,8 @@ class Section(_Element):
         el = etree.Element(self.type_)
         el.attrib['font'] = self.font
         el.attrib['spacing'] = str(self.spacing)
+        el.attrib['align'] = get_align_key(self.align)
+        el.attrib['align'] = get_valign_key(self.valign)
         el.attrib['x1'] = str(self.pos[0])
         el.attrib['y1'] = str(self.pos[1])
         el.attrib['x2'] = str(self.pos[2])
@@ -692,7 +703,7 @@ class _RenderableSection(_Renderable):
     """
     An abstract class defining objects that can be created from presentation types.
     """
-    def __init__(self, align=LEFT, valign=TOP, margin=0, pos=None):
+    def __init__(self, align=None, valign=None, margin=0, pos=None):
         _Renderable.__init__(self, pos)
         self.align = align
         self.valign = valign
@@ -736,7 +747,7 @@ class Text(_RenderableSection):
     The text can be formatted according to the Pango Markup Language
     (http://www.pygtk.org/docs/pygtk/pango-markup-language.html).
     """
-    def __init__(self, markup, align=CENTER, valign=MIDDLE, margin=0,
+    def __init__(self, markup, align=None, valign=None, margin=0,
                  pos=None):
         _RenderableSection.__init__(self, align, valign, margin, pos)
         self.markup = markup
@@ -755,21 +766,35 @@ class Text(_RenderableSection):
         font_descr.set_size(int(font_descr.get_size() * screen_height / 768))
         layout.set_font_description(font_descr)
         layout.set_spacing(int((section.spacing - 1.0) * font_descr.get_size()))
+        
         if self.align != None:
             layout.set_alignment(self.align)
+        elif section.align != None:
+            layout.set_alignment(section.align)
+        else:
+            layout.set_alignment(CENTER)
+        
         layout.set_markup(self.markup)
         
         while layout.get_pixel_size()[1] > self.rpos[3] - self.rpos[1]:
             font_descr.set_size(int(font_descr.get_size()*0.95))
             layout.set_spacing(int((section.spacing - 1.0) * font_descr.get_size()))
             layout.set_font_description(font_descr)
-        if self.valign == TOP:
+        
+        if self.valign != None:
+            valign = self.valign
+        elif section.valign != None:
+            valign = section.valign
+        else:
+            valign = MIDDLE
+        
+        if valign == TOP:
             top = self.rpos[1]
-        elif self.valign == MIDDLE:
+        elif valign == BOTTOM:
+            top = self.rpos[3] - layout.get_pixel_size()[1]
+        else: # Default to Middle
             top = self.rpos[1] + (self.rpos[3] - self.rpos[1]) / 2 - \
                   layout.get_pixel_size()[1] / 2
-        else:
-            top = self.rpos[3] - layout.get_pixel_size()[1]
         
         if section.shadow_color:
             clr = gtk.gdk.color_parse(section.shadow_color)
@@ -804,7 +829,7 @@ class Image(_RenderableSection):
     """
     An image to be rendered on the screen.
     """
-    def __init__(self, src, aspect=ASPECT_FIT, align=CENTER, valign=MIDDLE,
+    def __init__(self, src, aspect=ASPECT_FIT, align=None, valign=None,
                  margin=0, pos=None):
         _RenderableSection.__init__(self, align, valign, margin, pos)
         self.src = src
@@ -833,25 +858,37 @@ class Image(_RenderableSection):
         _RenderableSection.draw(self, ccontext, bounds, section, expand)
         
         size = map(_subtract, self.rpos[2:4], self.rpos[:2])
+        valign = align = None
         
         img = self.load(size)
         if not img:
             return False
-        if self.valign == TOP:
+        
+        if self.valign != None:
+            valign = self.valign
+        elif section.valign != None:
+            valign = section.valign
+        
+        if valign == TOP:
             top = self.rpos[1]
-        elif self.valign == MIDDLE:
+        elif valign == BOTTOM:
+            top = self.rpos[3] - img.get_height()
+        else: # Default to Middle
             top = self.rpos[1] + (self.rpos[3] - self.rpos[1]) / 2 - \
                   img.get_height() / 2
-        else:
-            top = self.rpos[3] - img.get_height()
         
-        if self.align == LEFT:
+        if self.align != None:
+            align = self.align
+        elif section.align != None:
+            align = section.align
+        
+        if align == LEFT:
             left = self.rpos[0]
-        elif self.align == CENTER:
+        elif align == RIGHT:
+            left = self.rpos[2] - img.get_width()
+        else: # Default to Center
             left = self.rpos[0] + (self.rpos[2] - self.rpos[0]) / 2 - \
                   img.get_width() / 2
-        else:
-            left = self.rpos[2] - img.get_width()
         
         if img:
             ccontext.set_source_pixbuf(img, left, top)

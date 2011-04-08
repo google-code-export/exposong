@@ -71,10 +71,7 @@ class Presentation (Plugin, _abstract.Presentation, exposong._hook.Menu,
                 self.title = value.get("title", '')
                 self._theme = value.get("theme", '')
                 for el in value:
-                    k = {
-                         'align': theme.CENTER,
-                         'valign': theme.MIDDLE,
-                         }
+                    k = {}
                     k['margin'] = int(el.get('margin', 0))
                     k['pos'] = [0,0,0,0]
                     k['pos'][0] = float(el.get('x1', 0.0))
