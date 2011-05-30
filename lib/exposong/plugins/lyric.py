@@ -229,17 +229,11 @@ class Presentation (_abstract.Presentation, Plugin, exposong._hook.Menu,
                          self.song.props.verse_order \
                          if self.get_slide_from_order(n) >= 0)
         else:
-            if config.get("general", "title_slide") == "True":
-                #Skip title slide in default order
-                return map(lambda x: x+1, _abstract.Presentation.get_order(self))
             return _abstract.Presentation.get_order(self)
 
     def get_slide_from_order(self, order_value):
         'Gets the slide index.'
         i = 0
-        #When there is a title slide (index 0), skip it
-        if config.get("general", "title_slide") == "True":
-            i = 1
         for sl in self.slides:
             if re.match(order_value, sl.title.lower()):
                 return i
@@ -944,20 +938,6 @@ class Presentation (_abstract.Presentation, Plugin, exposong._hook.Menu,
             if order[i] == old_title:
                 order[i] = new_title
         self._fields['verse_order'].set_text(" ".join(order))
-    
-    def get_slide_list(self, editing=False):
-        'Get the slide list.'
-        return _abstract.Presentation.get_slide_list(self)
-        
-    def get_slide_list_with_title(self):
-        if config.get("general", "title_slide") == "True":
-            verse = openlyrics.Verse()
-            verse.name = _("Title")
-            slide = self.Slide(self, verse)
-            slide._set_lines(self.get_title())
-            return ((slide, slide.get_markup()),) + _abstract.Presentation.get_slide_list(self)
-        else:
-            return self.get_slide_list()
 
     def _get_authors_string(self):
         """"
@@ -1058,7 +1038,6 @@ class Presentation (_abstract.Presentation, Plugin, exposong._hook.Menu,
         cls.menu_merge_id = uimanager.add_ui_from_string("""
             <menubar name='MenuBar'>
                 <menu action="Presentation">
-                
                         <menu action="pres-new">
                             <menuitem action='pres-new-lyric' />
                         </menu>
@@ -1077,7 +1056,7 @@ class Presentation (_abstract.Presentation, Plugin, exposong._hook.Menu,
         cls.tb_merge_id = uimanager.add_ui_from_string("""
             <toolbar name='Toolbar'>
                 <placeholder name="pres-new-lyric">
-                <toolitem action='pres-new-lyric' />
+                    <toolitem action='pres-new-lyric' />
                 </placeholder>
             </toolbar>
             """)

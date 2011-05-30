@@ -57,14 +57,13 @@ class Config(ConfigParser.SafeConfigParser):
         self.add_section("general")
         self.add_section("screen")
         self.add_section("updates")
-        
+        self.add_section("songs")
         
         self.set("dialogs", "songselect-import-dir", os.path.expanduser("~"))
         self.set("dialogs", "exposong_legacy-import-dir", os.path.expanduser("~"))
         self.set("dialogs", "opensong-import-dir", os.path.expanduser("~"))
         
         self.set("general", "ccli", "")
-        self.set("general", "title_slide", "True")
         self.set("general", "songbook", "")
         
         self.set("screen", "logo",
@@ -75,6 +74,8 @@ class Config(ConfigParser.SafeConfigParser):
         
         self.set("updates", "check_for_updates", "True")
         self.set("updates", "last_check", "")
+        
+        self.set("songs", "show_in_order", "True")
         
         self.configfile = cfile
         self.read(self.configfile)

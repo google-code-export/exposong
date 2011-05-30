@@ -26,6 +26,7 @@ import pango
 import random
 
 import exposong.screen
+from exposong import config
 
 slidelist = None #will hold instance of SlideList
 slide_scroll = None
@@ -69,11 +70,15 @@ class SlideList(gtk.TreeView, exposong._hook.Menu):
         if not hasattr(self, 'pres_type') or self.pres_type is not pres.get_type():
             self.pres_type = pres.get_type()
             pres.slide_column(self.column1)
-        for slide in pres.get_slide_list_with_title():
+        
+        if config.config.get('songs', 'show_in_order') == "True":
+            slides = pres.get_slides_in_order()
+        else:
+            slides = pres.get_slide_list()
+        for slide in slides:
             slist.append(slide)
         self.slide_order = pres.get_order()
         self.slide_order_index = -1
-        self.order_entry.set_text(pres.get_order_string())
         
         self.__timer += 1
         men = slist.get_iter_first() is not None
@@ -161,6 +166,11 @@ class SlideList(gtk.TreeView, exposong._hook.Menu):
         # Return False, because the slide is activated, adding another timeout
         return False
     
+    def toggle_show_order(self, widget):
+        'Called when the "pres-show-in-order" action was toggled'
+        config.config.set("songs", "show_in_order", str(widget.get_active()))
+        self.set_presentation(self.pres)
+    
     @classmethod
     def merge_menu(cls, uimanager):
         'Merge new values with the uimanager.'
@@ -172,6 +182,10 @@ class SlideList(gtk.TreeView, exposong._hook.Menu):
                 ('pres-slide-next', None, _("Next Slide"), "Page_Down", None,
                         slidelist.next_slide),
                 ])
+        cls._actions.add_toggle_actions([
+            ('pres-show-in-order', None, _("Show Slides in Order"), None, None,
+                        slidelist.toggle_show_order),
+        ])
         
         uimanager.insert_action_group(cls._actions, -1)
         uimanager.add_ui_from_string("""
@@ -179,28 +193,34 @@ class SlideList(gtk.TreeView, exposong._hook.Menu):
                 <menu action="Presentation">
                     <menuitem action="pres-slide-prev" position="bot" />
                     <menuitem action="pres-slide-next" position="bot" />
+                    <menuitem action="pres-show-in-order" position="bot" />
                 </menu>
             </menubar>
             """)
         cls._actions.get_action("pres-slide-next").set_sensitive(False)
         cls._actions.get_action("pres-slide-prev").set_sensitive(False)
+        action = cls._actions.get_action('pres-show-in-order')
+        if config.config.get('songs', 'show_in_order') == "True":
+            action.set_active(True)
+        exposong.preslist.preslist.get_selection().connect('changed',
+                                cls._show_in_order_active, action)
+        
         # unmerge_menu not implemented, because we will never uninstall this as
         # a module.
-        
+    
     @classmethod
-    def get_slide_control_bar(cls):
-        "Return the slide control bar widget."
-        h = gtk.HBox()
-        #cls.checkbox_use_order = gtk.CheckButton("Use Order")
-        #h.pack_start(cls.checkbox_use_order)
-        button = gtk.Button("<")
-        cls._actions.get_action('pres-slide-prev').connect_proxy(button)
-        h.pack_start(button)
-        cls.order_entry = gtk.Entry()
-        cls.order_entry.set_editable(False)
-        cls.order_entry.set_property("can-focus", False)
-        h.pack_start(cls.order_entry)
-        button = gtk.Button(">")
-        cls._actions.get_action('pres-slide-next').connect_proxy(button)
-        h.pack_start(button)
-        return h
+    def get_order_checkbutton(cls):
+        "Return the 'Use Order' checkbox"
+        cb = gtk.CheckButton()
+        cls._actions.get_action('pres-show-in-order').connect_proxy(cb)
+        return cb
+    
+    @staticmethod
+    def _show_in_order_active(sel, action):
+        if sel.count_selected_rows() > 0:
+            (model, itr) = sel.get_selected()
+            pres = model.get_value(itr, 0)
+            if pres and pres.get_type() == 'lyric':
+                action.set_sensitive(True)
+                return
+        action.set_sensitive(False)

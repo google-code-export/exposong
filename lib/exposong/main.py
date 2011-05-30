@@ -131,7 +131,8 @@ class Main (gtk.Window):
         
         slide_v = gtk.VBox()
         slide_v.pack_start(slidelist.slide_scroll, True, True)
-        slide_v.pack_start(slidelist.slidelist.get_slide_control_bar(), False, True, 3)
+        slide_v.pack_start(gtk.HSeparator(), False, False)
+        slide_v.pack_start(slidelist.slidelist.get_order_checkbutton(), False, True, 3)
         self.win_h.pack2(slide_v, False, False)
         win_h_mn.pack_start(self.win_h, True, True, 0)
         

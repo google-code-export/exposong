@@ -65,9 +65,6 @@ class PrefsDialog(gtk.Dialog):
             g_update.set_active(True)
         
         table.attach_section_title(_("Lyrics"))
-        g_title = table.attach_checkbutton(_("Insert title slide"))
-        if config.get("general", "title_slide") == "True":
-            g_title.set_active(True)
         g_ccli = table.attach_entry(config.get("general","ccli"),
                                     label="CCLI #")
         songbooks = [sbook.name for t in exposong.main.main.library
@@ -133,9 +130,6 @@ class PrefsDialog(gtk.Dialog):
             if g_songbook.get_active_text():
                 config.set("general", "songbook", g_songbook.get_active_text())
             config.set("updates", "check_for_updates", str(g_update.get_active()))
-            if config.get("general", "title_slide") != str(g_title.get_active()):
-                config.set("general", "title_slide", str(g_title.get_active()))
-                exposong.preslist.preslist.activate_pres()
             
             if config.has_option("general", "data-path"):
                 curpath = config.get("general", "data-path")
