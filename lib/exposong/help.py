@@ -55,7 +55,7 @@ class Help(exposong._hook.Menu, object):
         webbrowser.open("http://exposong.org/contribute")
         exposong.log.info("Contribute page opened in Web Browser.")
     
-    def _check_for_update(self, *args, **kw):
+    def check_for_update(self, *args, **kw):
         "Let the user know if a new version is out."
         statusbar.statusbar.output(_("Checking for updates ..."))
         
@@ -248,7 +248,7 @@ many colors make the text difficult to read.'))
                 ('Contribute', None, _("Contribute"), None, None,
                         self.show_contrib),
                 ('CheckUpdate', None, _("Check for New _Version"), None, None,
-                        self._check_for_update),
+                        self.check_for_update),
                 ])
         
         uimanager.insert_action_group(cls._actions, -1)

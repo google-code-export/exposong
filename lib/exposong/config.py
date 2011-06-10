@@ -58,6 +58,8 @@ class Config(ConfigParser.SafeConfigParser):
         self.add_section("screen")
         self.add_section("updates")
         self.add_section("songs")
+
+        self.set("general", "data-path", "")
         
         self.set("dialogs", "songselect-import-dir", os.path.expanduser("~"))
         self.set("dialogs", "exposong_legacy-import-dir", os.path.expanduser("~"))

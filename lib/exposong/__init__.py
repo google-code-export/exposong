@@ -179,10 +179,11 @@ from exposong import config
 
 if options.data_path:
     DATA_PATH = abspath(options.data_path)
-elif config.config.has_option("general", "data-path"):
+elif os.path.isdir(config.config.get("general", "data-path")):
     DATA_PATH = config.config.get("general", "data-path")
 else:
     DATA_PATH = join(expanduser("~"), "exposong", "data")
+    config.config.set("general", "data-path", DATA_PATH)
 
 log.debug('Data is located at "%s".', DATA_PATH)
 
@@ -201,7 +202,10 @@ elif options.clear_cache:
 # either directories or symlinks. We might need to handle the case where they
 # could be files at a later point (TODO).
 if not os.path.exists(DATA_PATH):
-    os.makedirs(DATA_PATH)
+    try:    
+        os.makedirs(DATA_PATH)
+    except OSError:
+        log.error('Could not access Data Path "%s".', DATA_PATH)
 for folder in ('bg', 'pres', 'sched', 'image', 'theme'):
     if not os.path.exists(join(DATA_PATH, folder)):
         os.mkdir(join(DATA_PATH, folder))
