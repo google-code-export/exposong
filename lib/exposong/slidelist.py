@@ -180,6 +180,8 @@ class SlideList(gtk.TreeView, exposong._hook.Menu):
     def reset_timer(self):
         'Restart the timer.'
         self.__timer += 1
+        if not exposong.screen.screen.is_running():
+            return False
         if self.pres and self.pres.get_timer():
             gobject.timeout_add(self.pres.get_timer()*1000, self._set_timer,
                                 self.__timer)
@@ -190,9 +192,18 @@ class SlideList(gtk.TreeView, exposong._hook.Menu):
             return False
         if not exposong.screen.screen.is_running():
             return False
-        if not self.next_slide(None) and self.pres.is_timer_looped():
-            self.to_slide(0)
-        # Return False, because the slide is activated, adding another timeout
+
+        # Move to next slide: Implement custom move here to keep
+        # from interfering with pageup/pagedown customizations.
+        model, itr = self.get_selection().get_selected()
+        itrsel = model.iter_next(itr)
+        if not itrsel and self.pres.is_timer_looped():
+                itrsel = model.get_iter_first()
+        if itrsel:
+            self.get_selection().select_iter(itrsel)
+            self.scroll_to_cell(model.get_path(itrsel))
+
+        # Return False, to end the timer.
         return False
     
     def toggle_show_order(self, widget):
