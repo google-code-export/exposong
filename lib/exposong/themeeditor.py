@@ -455,23 +455,35 @@ in percentage of font height. So an offset of 0.5 for point 12 font is 6 points.
         table.attach_section_title(_("Gradient Background"))
         self._bg_gradient_colors = []
         self._bg_gradient_lengths = []
+        self._bg_gradient_delete_buttons = []
         loc = 0.1
         if len(bg.stops) == 0:
             for i in range(2):
                 self._bg_gradient_add_point(update=False)
         for i in range(len(bg.stops)):
+            # Color Button
             self._bg_gradient_colors.append(table.attach_widget(
-                    gtk.ColorButton(), label=_("Color %d"%i)))
+                    gtk.ColorButton(), label=_("Color %d"%i), yoptions=gtk.SHRINK))
             self._bg_gradient_colors[i].set_use_alpha(True)
             self._bg_gradient_colors[i].connect('color-set',
                                                 self._on_bg_gradient_changed)
+            # Delete Button if more than two points exits
+            if len(bg.stops)>2:
+                del_button = gtk.Button(None)
+                img = gtk.Image()
+                img.set_from_stock(gtk.STOCK_DELETE, gtk.ICON_SIZE_BUTTON)
+                del_button.set_image(img)
+                del_button.connect('clicked', self._bg_gradient_delete_point, i)
+                self._bg_gradient_delete_buttons.append(del_button)
+                table.attach(del_button, 2, 3, table.y-1, table.y+1, xoptions=gtk.SHRINK, yoptions=gtk.FILL)
+            # Position HScale
             self._bg_gradient_lengths.append(table.attach_widget(
-                    gtk.HScale(gtk.Adjustment(50,0,100,1,10,0)), label=_("Length")))
+                    gtk.HScale(gtk.Adjustment(50,0,100,1,10,0)), label=_("Position"), yoptions=gtk.SHRINK))
             self._bg_gradient_lengths[i].set_digits(0)
             self._bg_gradient_lengths[i].connect('change-value',
                                                  self._on_bg_gradient_changed)
-            table.attach_hseparator()
-        add = table.attach_widget(gtk.Button(_("Add Stop"), gtk.STOCK_ADD))
+            table.attach_hseparator(yoptions=gtk.SHRINK)
+        add = table.attach_widget(gtk.Button(_("Add Point")))
         add.connect('clicked', self._bg_gradient_add_point)
         
         # TODO Move HScale as helper function to ESTable
@@ -482,8 +494,15 @@ in percentage of font height. So an offset of 0.5 for point 12 font is 6 points.
         table.show_all()
         self._load_bg_gradient()
     
+    def _bg_gradient_delete_point(self, button, i):
+        'Delete a point from the current gradient background'
+        self._get_active_bg().stops.pop(i)
+        self._bg_gradient_colors.pop(i)
+        self._bg_gradient_delete_buttons.pop(i)
+        self._on_bg_gradient()
+    
     def _bg_gradient_add_point(self, widget=None, update=True, *args):
-        'Adds a new point to the current background'
+        'Adds a new point to the current gradient background'
         self._set_changed()
         bg = self._get_active_bg()
         if len(bg.stops)>0:
@@ -950,7 +969,7 @@ Do you want to save?")
             dialog.show_all()
             resp = dialog.run()
             if resp == gtk.RESPONSE_NO:
-                pass
+                self.theme.revert()
             elif resp == gtk.RESPONSE_CANCEL:
                 dialog.destroy()
                 return True

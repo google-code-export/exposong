@@ -67,7 +67,6 @@ class ExportImport(Plugin, exposong._hook.Menu):
     def export_song(cls, *args):
         'Export a Song'
         pres = exposong.preslist.preslist.get_active_item()
-        print pres.filename
         
         dlg = gtk.FileChooserDialog(_("Export Current Song"),
                                     exposong.main.main,
@@ -393,7 +392,6 @@ What do you want to do?'%(new_song.props.titles[0].text, most_similar_song.song.
         if os.path.isdir(os.path.join(tmpdir, "pres")):
             pres2rename = []
             for nm in os.listdir(os.path.join(tmpdir,"pres")):
-                print nm
                 if not os.path.isfile(os.path.join(tmpdir,"pres",nm)):
                     continue
                 # Rename Images
