@@ -32,7 +32,7 @@ import exposong.notify
 import exposong._hook
 import exposong.help
 from exposong import RESOURCE_PATH, DATA_PATH
-from exposong import config, prefs, screen, schedlist, splash, exampledata
+from exposong import config, prefs, screen, schedlist, splash
 from exposong import preslist, presfilter, slidelist, statusbar, themeselect
 from exposong import print_support
 from exposong.schedule import Schedule # ? where to put library
@@ -85,7 +85,6 @@ class Main (gtk.Window):
         preslist.preslist = preslist.PresList()
         slidelist.slidelist = slidelist.SlideList()
         themeselect.themeselect = themeselect.ThemeSelect()
-        exampledata.exampledata = exampledata.ExampleData(self)
         
         exposong.log.debug("Creating the menus.")
         menu = self._create_menu()
@@ -192,7 +191,7 @@ class Main (gtk.Window):
         if exposong.options.import_:
             from exposong.plugins import export_import
             export_import.ExportImport.import_file(exposong.options.import_)
-        exampledata.exampledata.check_presentations(self)
+        self._check_no_presentations()
         return False
     
     def _create_icons(self):
@@ -316,8 +315,6 @@ class Main (gtk.Window):
                     <menu action="Help">
                         <menuitem action="UsageGuide" />
                         <menuitem action="view-log" />
-                        <separator />
-                        <menuitem action="ExampleData" />
                         <menuitem action="CheckUpdate" />
                         <separator />
                         <menuitem action="About" />
@@ -479,6 +476,23 @@ class Main (gtk.Window):
         'Enables keyboard shortcuts after disabling.'
         for k in keys_to_disable:
             screen.screen._actions.get_action(k).connect_accelerator()
+    
+    def _check_no_presentations(self):
+        '''Checks at startup whether presentations exist and provides a link
+        to the download section at exposong.org'''
+        if len(os.listdir(os.path.join(DATA_PATH, "pres"))) > 0:
+            return
+        msg = _("It seems you have no presentations yet created.\n\n\
+Visit the following URL to download free Songs and Themes:")
+        dialog = gtk.MessageDialog(self, gtk.DIALOG_MODAL,
+                                   gtk.MESSAGE_INFO, gtk.BUTTONS_CLOSE,
+                                   msg)
+        dialog.set_title(_("Example Content"))
+        btn = gtk.LinkButton("http://exposong.org/extras", "exposong.org/extras")
+        dialog.get_content_area().pack_start(btn, False, True)
+        btn.show()
+        resp = dialog.run()
+        dialog.destroy()
     
     def _autocheck_for_update(self):
         'Checks for available updates at startup once in a month'
