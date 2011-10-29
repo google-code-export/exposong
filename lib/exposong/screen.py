@@ -22,6 +22,7 @@ initialize the window and set up a few things, but most of the rendering is
 done by the theme.
 """
 
+import gobject
 import gtk
 import os
 
@@ -64,11 +65,11 @@ class Screen(exposong._hook.Menu):
         self.window = gtk.Window(gtk.WINDOW_POPUP)
         
         self.pres = gtk.DrawingArea()
-        self.pres.connect("expose-event", self._expose_pres)
+        self.pres.connect("expose-event", self._expose_screen)
         self.window.add(self.pres)
         
         self.preview = gtk.DrawingArea()
-        self.preview.connect("expose-event", self._expose_preview)
+        self.preview.connect("expose-event", self._expose_screen)
         
         
         # Themes being used for the preview when black, background or logo  is active
@@ -177,13 +178,9 @@ class Screen(exposong._hook.Menu):
         exposong.slidelist.slidelist.grab_focus()
         exposong.slidelist.slidelist.reset_timer()
     
-    def _expose_pres(self, widget, event):
+    def _expose_screen(self, widget, event):
         'Redraw the presentation screen.'
-        self._draw(self.pres)
-    
-    def _expose_preview(self, widget, event):
-        'Redraw the preview widget.'
-        self._draw(self.preview)
+        self._draw(widget)
     
     def is_viewable(self):
         "Return true if the screen is currently visible."
@@ -242,6 +239,7 @@ class Screen(exposong._hook.Menu):
             # TODO Since we have builtin themes, we should not have to have this
             # anymore. Remove this after testing.
             theme = exposong.theme.Theme()
+        
         if widget is self.pres:
             if self._actions.get_action('Black Screen').get_active():
                 exposong.theme.Theme.render_color(ccontext, bounds, '#000')
@@ -253,8 +251,6 @@ class Screen(exposong._hook.Menu):
                 theme.render(ccontext, bounds, None)
             else:
                 theme.render(ccontext, bounds, slide)
-        else:
-            theme.render(ccontext, bounds, slide)
         
         # In Preview show the themes defined in __init__ when
         # one of the secondary buttons is active.
@@ -267,6 +263,8 @@ class Screen(exposong._hook.Menu):
                 self._theme_logo.render(ccontext, bounds, None)
             elif self._actions.get_action('Freeze').get_active():
                 self._theme_freeze.render(ccontext, bounds, None)
+            else:
+                theme.render(ccontext, bounds, slide)
         
         exposong.notify.notify.draw(ccontext, bounds)
             

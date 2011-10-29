@@ -60,9 +60,10 @@ class ThemeSelect(gtk.ComboBox, exposong._hook.Menu, object):
         self.pack_start(textrend, True)
         self.set_cell_data_func(textrend, self._get_theme_title)
         self.connect("changed", self._theme_changed)
+        self.liststore.set_sort_func(1, self._sort)
         
         task = self._load_themes()
-        gobject.idle_add(task.next)
+        gobject.idle_add(task.next, priority=gobject.PRIORITY_HIGH-10)
     
     def get_active(self):
         "Get the currently selected theme."
@@ -103,6 +104,8 @@ class ThemeSelect(gtk.ComboBox, exposong._hook.Menu, object):
             yield True
         task = self._load_theme_thumbs()
         gobject.idle_add(task.next, priority=gobject.PRIORITY_LOW)
+        yield True
+        self.liststore.set_sort_column_id(1, gtk.SORT_ASCENDING)
         yield False
     
     def _load_theme_thumbs(self):
@@ -187,6 +190,17 @@ class ThemeSelect(gtk.ComboBox, exposong._hook.Menu, object):
         cell.theme = theme
         size = (int(CELL_HEIGHT * CELL_ASPECT), CELL_HEIGHT)
         cell._get_pixmap(self.window, size, False)
+    
+    def _sort(self, model, itr1, itr2):
+        "Sort the themes in the list."
+        th1 = model.get_value(itr1, 1)
+        th2 = model.get_value(itr2, 1)
+        if th1 is None or th2 is None: return 0
+        # Sort builtin to the end
+        if th1.is_builtin() != th2.is_builtin():
+            return cmp(th1.is_builtin(), th2.is_builtin())
+        # Sort by title
+        return cmp(th1.get_title(), th2.get_title())
     
     @classmethod
     def merge_menu(cls, uimanager):
