@@ -6,10 +6,10 @@
 
 = About =
 
-ExpoSong is a presentation software with a focus on displaying lyrics, 
-text and image slides in a Christian setting. Features include:
- * Image, lyric, and text presentations
- * Images and gradient backgrounds
+ExpoSong is a presentation software with a focus on displaying Songs and
+generic slides in a Christian setting. Features include:
+ * Create Songs or generic ExpoSong Presentations
+ * Themes with background images, colors and gradients
  * Schedules
  * On-screen notifications
  * Logo and black screen

@@ -8,7 +8,7 @@
 
 == 0.8 ==
 
- * Themes have now replaced backgrounds. Three builtin themes are available,
+ * Themes have now replaced backgrounds. One builtin theme is available,
    or custom themes can created or imported.
    * Backgrounds can be text, images, gradiants, radial gradiants, or a
      combination.
