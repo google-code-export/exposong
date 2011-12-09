@@ -144,10 +144,10 @@ class Presentation (_abstract.Presentation, Plugin, exposong._hook.Menu,
             if len(author) > 0:
                 jn.append(escape(author))
             if len(self.pres.song.props.copyright):
-                jn.append(u"Copyright \xA9 %s" % \
+                jn.append(u"\xA9 %s" % \
                           escape(self.pres.song.props.copyright))
             if config.get("songs", "ccli"):
-                jn.append("CCLI# %s" % escape(config.get("songs", "ccli")))
+                jn.append("CCLI License # %s" % escape(config.get("songs", "ccli")))
             return '\n'.join(jn)
         
         def _edit_window(self, parent):
