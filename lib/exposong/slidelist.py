@@ -124,7 +124,7 @@ class SlideList(gtk.TreeView, exposong._hook.Menu):
             cur = int(model.get_string_from_iter(itr))
         else:
             cur = -1
-        self.to_slide(cur+mv)
+        self.to_slide(cur, cur+mv)
     
     def prev_slide(self, *args):
         'Move to the previous slide.'
@@ -134,32 +134,38 @@ class SlideList(gtk.TreeView, exposong._hook.Menu):
         'Move to the next slide.'
         return self._move_to_slide(1)
     
-    def to_slide(self, slide_num):
-        'Move to the slide at slide_num'
+    def to_slide(self, current_slide, mv_to_slide_num):
+        'Move to the slide at mv_to_slide_num'
         model = self.get_model()
-        if slide_num < 0:
-            slide_num = 0
-        itr = model.iter_nth_child(None, slide_num)
+        if mv_to_slide_num < 0:
+            mv_to_slide_num = 0
+        itr = model.iter_nth_child(None, mv_to_slide_num)
         if itr:
             selection = self.get_selection()
             selection.select_iter(itr)
             self.scroll_to_cell(model.get_path(itr))
-        self.check_open_pres(slide_num)
+        
+        moving_down = mv_to_slide_num > current_slide
+        self.check_open_pres(mv_to_slide_num, moving_down)
     
-    def check_open_pres(self, cur_slide):
+    def check_open_pres(self, cur_slide, moving_down):
         '''Activates the next/previous presentation if:
          * The user presses the PgUp/PgDn key at the beginning/end of the list twice
-         * The schedule is a user-defined one
-         * The current presentation is not the last respectively the first one in the schedule.'''
+         * AND The schedule is a user-defined one
+         * AND The current presentation is not the last respectively the first one in the schedule.'''
         if exposong.schedlist.schedlist.get_active_item().is_builtin():
             return
         preslist = exposong.preslist.preslist
-        if self.__pres_mv == 1 and not preslist.is_last_pres_active():
+        if moving_down and self.__pres_mv == 1 and not preslist.is_last_pres_active():
             preslist.next_pres()
             self.set_cursor(0)
-        elif self.__pres_mv == -1 and not preslist.is_first_pres_active():
+            self.__pres_mv = 0
+            return
+        elif not moving_down and self.__pres_mv == -1 and not preslist.is_first_pres_active():
             preslist.prev_pres()
             self.set_cursor(0)
+            self.__pres_mv = 0
+            return
         
         if cur_slide == len(self.get_model()) and not preslist.is_last_pres_active():
             self.__pres_mv = 1
