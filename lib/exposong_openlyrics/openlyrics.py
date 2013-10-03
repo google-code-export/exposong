@@ -172,7 +172,7 @@ class Song(object):
             self._version = OLYR_VERSION
         root = etree.Element(u'song')
 
-        # attribuses are sorted in alphabetic order by ElementTree
+        # attributes are sorted in alphabetic order by ElementTree
         root.set(u'createdIn', self.createdIn)
         root.set(u'modifiedDate', self.modifiedDate)
         root.set(u'modifiedIn', self.modifiedIn)
@@ -405,23 +405,23 @@ class Properties(object):
             elem1 = etree.Element(u'comments')
             for c in self.comments:
                 elem2 = etree.Element(u'comment')
-                elem2.text = str(c)
+                elem2.text = c
                 elem1.append(elem2)
             props.append(elem1)
         
         if self.copyright:
             elem1 = etree.Element(u'copyright')
-            elem1.text = str(self.copyright)
+            elem1.text = self.copyright
             props.append(elem1)
         
         if self.ccli_no:
             elem1 = etree.Element(u'ccliNo')
-            elem1.text = str(self.ccli_no)
+            elem1.text = self.ccli_no
             props.append(elem1)
         
         if self.released:
             elem1 = etree.Element(u'releaseDate')
-            elem1.text = str(self.released)
+            elem1.text = self.released
             props.append(elem1)
         
         if self.tempo:
@@ -737,7 +737,6 @@ class Lines(object):
         Create the XML element.
         """
         lines_elem = etree.Element('lines')
-        lines_markup = ""
         if self.part:
             lines_elem.set('part', self.part)
         ct = 0
@@ -772,7 +771,6 @@ class Line(object):
     """
     A single line in a group of lines.
     """
-    __chords_regex = re.compile(u'<chord[^>]*>')
     
     def __init__(self, markup):
         """
@@ -780,13 +778,15 @@ class Line(object):
         
         markup      A String containing the Line markup
         """
+        if markup is None:
+            markup = ""
         self.markup = markup
     
     def _get_text(self):
         """
         Get the text for this line.
         """
-        return self.__chords_regex.sub(u'',self.markup)
+        return self.markup.strip()
     
     def _set_text(self, value):
         """
@@ -795,14 +795,6 @@ class Line(object):
         self.markup = value
     
     text = property(_get_text, _set_text)
-    
-    def _get_chords(self):
-        """
-        Get the chords for this line.
-        """
-        self.__chords_regex.findall(self.markup)
-    
-    chords = property(_get_chords)
     
     def __str__(self):
         """
@@ -814,7 +806,7 @@ class Line(object):
         """
         Return a unicode representation.
         """
-        return self.text.strip()
+        return self.text
 
 
 # Various functions
